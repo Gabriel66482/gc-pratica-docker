@@ -1,0 +1,56 @@
+name: Verificar atividade Docker
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
+
+jobs:
+  atividade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Montar a versao original
+        run: |
+          git archive v1.0.0 | docker build -t gc-pratica:1.0.0 -
+          docker images gc-pratica
+          docker run --rm gc-pratica:1.0.0 | tee /tmp/original.txt
+          grep -Fx '10 - 4 = -6' /tmp/original.txt
+          grep -Fx 'média de 6, 8 e 10 = 12.0' /tmp/original.txt
+          docker run --rm gc-pratica:1.0.0 python --version | grep '^Python 3.13.'
+      - name: Conferir a Parte 4 antes do dockerignore
+        run: |
+          git worktree add --detach /tmp/parte4 v1.1.0-antes-dockerignore
+          docker build -t gc-pratica:1.1.0 /tmp/parte4
+          docker run --rm gc-pratica:1.1.0 ls -a /app | grep -Fx '.git'
+      - name: Montar a versao corrigida e conferir exclusoes
+        run: |
+          docker build -t gc-pratica:1.1.0 .
+          docker run --rm gc-pratica:1.1.0 | tee /tmp/corrigido.txt
+          grep -Fx '10 - 4 = 6' /tmp/corrigido.txt
+          grep -Fx 'média de 6, 8 e 10 = 8.0' /tmp/corrigido.txt
+          docker run --rm gc-pratica:1.1.0 python -m unittest discover -s tests -v
+          docker run --rm gc-pratica:1.1.0 ls -a /app
+          docker run --rm gc-pratica:1.1.0 python -c 'from pathlib import Path; assert all(not Path("/app", name).exists() for name in (".git", "Dockerfile", ".dockerignore"))'
+          docker run --rm gc-pratica:1.0.0 | grep -Fx '10 - 4 = -6'
+      - name: Conferir containers sem remocao automatica
+        run: |
+          docker run --name gc-aula05-1 gc-pratica:1.1.0
+          docker run --name gc-aula05-2 gc-pratica:1.1.0
+          docker run --name gc-aula05-3 gc-pratica:1.1.0
+          docker ps -a
+          docker rm gc-aula05-1 gc-aula05-2 gc-aula05-3
+      - name: Conferir estudo autonomo com Compose
+        working-directory: estudo-compose
+        run: |
+          trap 'docker compose down' EXIT
+          docker compose up -d --build
+          docker compose ps
+          curl --fail --retry 10 --retry-connrefused --retry-delay 1 http://localhost:8080 | grep 'Docker Compose funcionando!'
+      - name: Limpar imagens da atividade
+        if: always()
+        run: |
+          docker image rm gc-pratica:1.0.0 gc-pratica:1.1.0 site:2.0.0 || true
+          docker ps -a
