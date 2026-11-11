@@ -1,0 +1,9 @@
+.git
+Dockerfile
+.dockerignore
+__pycache__
+*.pyc
+.venv
+.vscode
+.idea
+.github
