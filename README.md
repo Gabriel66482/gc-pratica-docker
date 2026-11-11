@@ -122,8 +122,9 @@ Remova somente containers que você criou. Preserve as imagens `python`, `nginx`
 ## Verificação e publicação
 
 Veja `VALIDACAO.md` para os testes efetivamente executados.
-O workflow `.github/workflows/docker.yml` está preparado para verificar as imagens em um runner Linux
-quando o repositório e suas tags forem publicados no GitHub. Estar configurado não significa que já executou.
+O workflow `.github/workflows/docker.yml` verificou com sucesso as imagens em um runner Linux com Docker:
+[execução aprovada](https://github.com/Gabriel66482/gc-pratica-docker/actions/runs/42933619786).
+Foram conferidos os resultados das duas versões, o Python 3.13, as exclusões do contexto, os testes e o Compose.
 
 Repositório da entrega: https://github.com/Gabriel66482/gc-pratica-docker.
 Para baixar a entrega com seu histórico e suas tags:
